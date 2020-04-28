@@ -1,6 +1,6 @@
 #include<xc.h>           // processor SFR definitions
 #include<sys/attribs.h>  // __ISR macro
-#include "i2c_master_noint.h"
+#include"i2c_master_noint.h"
 // DEVCFG0
 #pragma config DEBUG = OFF // disable debugging
 #pragma config JTAGEN = OFF // disable jtag
@@ -23,37 +23,48 @@
 #pragma config FWDTWINSZ = WINSZ_25 // wdt window at 25%
 
 // DEVCFG2 - get the sysclk clock to 48MHz from the 8MHz crystal
-#pragma config FPLLIDIV = DIV_2 // divide input clock to be in range 4-5MHz
+#pragma config FPLLIDIV = DIV_2 // divide input clock to be in range 4-5MHz  2
 #pragma config FPLLMUL = MUL_24 // multiply clock after FPLLIDIV
 #pragma config FPLLODIV = DIV_2 // divide clock after FPLLMUL to get 48MHz
 
 // DEVCFG3
-#pragma config USERID = 00000000 // some 16bit userid, doesn't matter what
+#pragma config USERID = 0 // some 16bit userid, doesn't matter what
 #pragma config PMDL1WAY = OFF // allow multiple reconfigurations
 #pragma config IOL1WAY = OFF // allow multiple reconfigurations
+//
+//
+//#define NUMSAMPS 100
+//#define PI 3.14159
 
-void setPin(unsigned char reg, unsigned char value){//then write read function: start send, stop
+void delay(){
+    while(_CP0_GET_COUNT() < 24000000/10);
+    _CP0_SET_COUNT(0);
+}
+
+void setPin(unsigned char address, unsigned char reg, unsigned char value){
     i2c_master_start();
-    i2c_master_send(0b01000000);
+    i2c_master_send(address);
     i2c_master_send(reg);
     i2c_master_send(value);
     i2c_master_stop();
 }
-unsigned char readPin(){ //unsigned char address, unsigned char reg
+
+unsigned char readPin(unsigned char address, unsigned char reg){
+    unsigned char value;
     i2c_master_start();
-    i2c_master_send(0b01000000);    // W add
-    i2c_master_send(0x19);      // GPIO B
+    i2c_master_send(address);
+    i2c_master_send(reg);
     i2c_master_restart();
-    i2c_master_send(0b01000001);    //R add
-    unsigned char recv = i2c_master_recv();
+    address = address | 0b00000001;
+    i2c_master_send(address);
+    value = i2c_master_recv();
     i2c_master_ack(1);
     i2c_master_stop();
-    return recv;
+    return value;
 }
+
 int main() {
-    //polling method: all call master setup. 
-    
-    //start, send the address for writing, send register you wanna read from, restart, send the address with reading, receive, acknowledge, stop
+
     __builtin_disable_interrupts(); // disable interrupts while initializing things
 
     // set the CP0 CONFIG register to indicate that kseg0 is cacheable (0x3)
@@ -73,31 +84,20 @@ int main() {
     LATAbits.LATA4 = 0;
     
     i2c_master_setup();
-    setPin(0x00,0b00000000);    // GPA all outputs
-    setPin(0x0A,0b10000000);    // Start outputs on high
-    setPin(0x10,0b11111111);    // GPB all inputs
+    setPin(0b01000000,0x00,0b00000000); // GPA all inputs
+    setPin(0b01000000,0x01,0b11111111); // GPB all outputs
     __builtin_enable_interrupts();
-
+    
     while (1) {
-        // use _CP0_SET_COUNT(0) and _CP0_GET_COUNT() to test the PIC timing
-        // remember the core timer runs at half the sysclk
-        while (_CP0_GET_COUNT() <= 12000000){
-            
-        }
-        LATAINV=0x10;
-        _CP0_SET_COUNT(0);/*
-        setPin(0x0A,0b10000000);
-        while (_CP0_GET_COUNT() <= 12000000){
-            
-        }
-        LATAINV=0x10;
-        _CP0_SET_COUNT(0);
-        setPin(0x0A,0b00000000);*/
-        if (readPin()>>7==1){
-            setPin(0x0A,0b10000000);
-        }
+        if (readPin(0b01000000,0x13)){ //IOCONBANK=0 -> GPIOB
+            setPin(0b01000000,0x14,0b00000000); //IOCONBANK=0 -> LATA 
+        } 
         else{
-            setPin(0x0A,0b00000000);
-        }
+            setPin(0b01000000,0x14,0b10000000); //LATA
+        }  
+        LATAbits.LATA4 = 0;
+        delay(); //10 ms
+        LATAbits.LATA4 = 1;
+        delay(); // 10ms
     }
 }

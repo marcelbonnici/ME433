@@ -1,13 +1,12 @@
 // I2C Master utilities, using polling rather than interrupts
 // The functions must be called in the correct order as per the I2C protocol
 // I2C pins need pull-up resistors, 2k-10k
-
 #include "i2c_master_noint.h"
 
 void i2c_master_setup(void) {
     // using a large BRG to see it on the nScope, make it smaller after verifying that code works
     // look up TPGD in the datasheet
-    I2C1BRG = 1000; //used to be 1000; I2CBRG = [1/(2*Fsck) - TPGD]*Pblck - 2 (TPGD is the Pulse Gobbler Delay)
+    I2C1BRG = 1000; // I2CBRG = [1/(2*Fsck) - TPGD]*Pblck - 2 (TPGD is the Pulse Gobbler Delay)
     I2C1CONbits.ON = 1; // turn on the I2C1 module
 }
 
@@ -59,3 +58,17 @@ void i2c_master_stop(void) { // send a STOP:
         ;
     } // wait for STOP to complete
 }
+/*
+unsigned char readPin(unsigned char address, unsigned char reg){
+    unsigned char val;
+    i2c_master_start();
+    i2c_master_send(address);
+    i2c_master_send(reg);
+    i2c_master_restart();
+    address = address | 0b00000001; //Force address to set to read
+    i2c_master_send(address);
+    val = i2c_master_recv();
+    i2c_master_ack(1);
+    i2c_master_stop();
+    return val;
+}*/

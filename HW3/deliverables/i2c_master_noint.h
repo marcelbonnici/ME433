@@ -1,9 +1,8 @@
-
 #ifndef I2C_MASTER_NOINT_H__
 #define I2C_MASTER_NOINT_H__
 // Header file for i2c_master_noint.c
 // helps implement use I2C1 as a master without using interrupts
-//7
+
 #include <xc.h>
 
 void i2c_master_setup(void); // set up I2C1 as master
