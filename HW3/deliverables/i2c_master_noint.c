@@ -58,17 +58,3 @@ void i2c_master_stop(void) { // send a STOP:
         ;
     } // wait for STOP to complete
 }
-/*
-unsigned char readPin(unsigned char address, unsigned char reg){
-    unsigned char val;
-    i2c_master_start();
-    i2c_master_send(address);
-    i2c_master_send(reg);
-    i2c_master_restart();
-    address = address | 0b00000001; //Force address to set to read
-    i2c_master_send(address);
-    val = i2c_master_recv();
-    i2c_master_ack(1);
-    i2c_master_stop();
-    return val;
-}*/
