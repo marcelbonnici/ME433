@@ -31,10 +31,7 @@
 #pragma config USERID = 0 // some 16bit userid, doesn't matter what
 #pragma config PMDL1WAY = OFF // allow multiple reconfigurations
 #pragma config IOL1WAY = OFF // allow multiple reconfigurations
-//
-//
-//#define NUMSAMPS 100
-//#define PI 3.14159
+
 
 void delay(){
     while(_CP0_GET_COUNT() < 24000000/10);
